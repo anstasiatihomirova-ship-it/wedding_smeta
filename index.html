@@ -1,1 +1,856 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Свадебная смета 💍</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blush: #f0e6e0;
+    --blush-deep: #e8d5cc;
+    --rose: #c9907a;
+    --rose-dark: #a86f5c;
+    --ink: #2c2420;
+    --ink-muted: #7a6660;
+    --ink-light: #b5a8a3;
+    --surface: #fdfaf8;
+    --card: #ffffff;
+    --border: rgba(44,36,32,0.10);
+    --border-strong: rgba(44,36,32,0.18);
+    --success: #6a9b6c;
+    --success-bg: #edf4ed;
+    --warning: #b5883a;
+    --warning-bg: #fdf3e3;
+    --neutral: #7a8a9e;
+    --neutral-bg: #edf0f4;
+    --danger: #b5504a;
+    --danger-bg: #fdf0ef;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--surface);
+    color: var(--ink);
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
 
+  /* ============ LANDING ============ */
+  #landing {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: linear-gradient(160deg, #fdfaf8 0%, #f5e9e3 100%);
+  }
+  .landing-card {
+    background: var(--card);
+    border-radius: 24px;
+    padding: 40px 32px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(44,36,32,0.08);
+    text-align: center;
+  }
+  .landing-card .emoji { font-size: 40px; margin-bottom: 12px; }
+  .landing-card h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 30px;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .landing-card p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    margin-bottom: 28px;
+  }
+  .landing-input {
+    width: 100%;
+    font-size: 15px;
+    padding: 13px 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--ink);
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .landing-input:focus { border-color: var(--rose); }
+  .landing-hint { font-size: 11.5px; color: var(--ink-light); margin-bottom: 20px; }
+  .landing-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--rose);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: background 0.15s;
+  }
+  .landing-btn:hover { background: var(--rose-dark); }
+  .landing-error {
+    color: var(--danger);
+    font-size: 12.5px;
+    margin-top: 10px;
+    display: none;
+  }
+  .landing-loading {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink-muted);
+    font-size: 14px;
+  }
+
+  /* ============ APP (hidden until loaded) ============ */
+  #app { display: none; }
+
+  .hero {
+    position: relative;
+    text-align: center;
+    border-bottom: 1px solid var(--blush-deep);
+    overflow: hidden;
+    background: #1a1614;
+    height: 340px;
+  }
+  .hero-photo-wrap { position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: default; }
+  .hero-photo-wrap.cropping { cursor: grab; }
+  .hero-photo-wrap.cropping.dragging { cursor: grabbing; }
+  .hero-photo {
+    position: absolute; top: 50%; left: 50%;
+    user-select: none; pointer-events: none;
+    transform-origin: center center; max-width: none;
+  }
+  .hero-placeholder {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    color: rgba(255,255,255,0.55); cursor: pointer;
+    background: linear-gradient(135deg, #2a2320, #1a1614);
+  }
+  .hero-placeholder svg { width: 34px; height: 34px; opacity: 0.6; }
+  .hero-placeholder span { font-size: 13px; letter-spacing: 0.05em; }
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(26,22,20,0.05) 0%, rgba(26,22,20,0.55) 100%);
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    padding-bottom: 36px; pointer-events: none;
+  }
+  .hero-names {
+    font-family: 'Cormorant Garamond', serif; font-size: 38px; font-weight: 400; color: #fff;
+    letter-spacing: 0.04em; line-height: 1.1; margin-bottom: 8px; text-shadow: 0 2px 16px rgba(0,0,0,0.3);
+  }
+  .hero-date { font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 300; letter-spacing: 0.14em; text-transform: uppercase; }
+  .hero-sub { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 300; letter-spacing: 0.10em; text-transform: uppercase; margin-top: 6px; }
+
+  .hero-controls { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 6; }
+  .hero-btn {
+    background: rgba(255,255,255,0.15); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; border-radius: 10px; padding: 7px 12px; font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; gap: 5px; font-family: 'Inter', sans-serif; transition: background 0.15s;
+  }
+  .hero-btn:hover { background: rgba(255,255,255,0.28); }
+  .hero-btn.active { background: var(--rose); border-color: var(--rose); }
+  .edit-names-btn { position: absolute; bottom: 12px; right: 12px; z-index: 6; }
+
+  .crop-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; background: rgba(20,16,14,0.9);
+    backdrop-filter: blur(6px); padding: 12px 14px; display: none; align-items: center; gap: 10px; z-index: 6;
+  }
+  .crop-bar.open { display: flex; }
+  .crop-bar span { color: rgba(255,255,255,0.75); font-size: 11px; white-space: nowrap; }
+  .crop-bar input[type=range] { flex: 1; accent-color: var(--rose); height: 4px; }
+  .crop-done { background: var(--rose); color: #fff; border: none; border-radius: 8px; padding: 7px 14px; font-size: 12px; cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap; }
+  .crop-hint {
+    position: absolute; top: 12px; left: 12px; background: rgba(20,16,14,0.75); color: rgba(255,255,255,0.85);
+    font-size: 11px; padding: 6px 10px; border-radius: 8px; z-index: 6; display: none;
+  }
+  .crop-hint.open { display: block; }
+
+  .sync-badge {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%) translateY(-40px);
+    background: var(--ink); color: #fff; font-size: 11.5px; padding: 6px 14px; border-radius: 20px;
+    z-index: 100; transition: transform 0.3s; pointer-events: none;
+  }
+  .sync-badge.show { transform: translateX(-50%) translateY(0); }
+
+  .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px 16px 0; max-width: 760px; margin: 0 auto; }
+  .s-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px 12px; text-align: center; }
+  .s-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 6px; }
+  .s-value { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--ink); line-height: 1.1; }
+  .s-value.green { color: var(--success); }
+  .s-value.red { color: var(--danger); }
+
+  .total-progress { max-width: 760px; margin: 16px auto 0; padding: 0 16px; }
+  .tp-bar { height: 6px; background: var(--blush-deep); border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
+  .tp-fill { height: 100%; background: var(--rose); border-radius: 10px; transition: width 0.5s ease; }
+  .tp-label { font-size: 11px; color: var(--ink-muted); text-align: center; }
+
+  .content { max-width: 760px; margin: 24px auto 0; padding: 0 16px; }
+  .section-title { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; color: var(--ink); margin-bottom: 12px; letter-spacing: 0.01em; }
+  #list { display: grid; grid-template-columns: 1fr; gap: 10px; }
+
+  .item { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; transition: box-shadow 0.2s; }
+  .item:hover { box-shadow: 0 2px 12px rgba(44,36,32,0.07); }
+  .item-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .item-left { flex: 1; min-width: 0; }
+  .item-name-row { display: flex; align-items: center; gap: 6px; }
+  .item-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 500; color: var(--ink); line-height: 1.2; }
+  .edit-icon { background: none; border: none; color: var(--ink-light); cursor: pointer; padding: 2px; display: flex; opacity: 0; transition: opacity 0.15s, color 0.15s; }
+  .item:hover .edit-icon { opacity: 1; }
+  .edit-icon:hover { color: var(--rose); }
+  .edit-icon svg { width: 13px; height: 13px; }
+  .item-link { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--rose); text-decoration: none; transition: color 0.15s; margin-top: 3px; }
+  .item-link:hover { color: var(--rose-dark); text-decoration: underline; }
+  .item-link svg { width: 11px; height: 11px; }
+
+  .status-pill { font-size: 11px; padding: 3px 10px; border-radius: 20px; white-space: nowrap; cursor: pointer; border: none; font-family: 'Inter', sans-serif; flex-shrink: 0; transition: opacity 0.15s; }
+  .status-pill:hover { opacity: 0.8; }
+  .s-booked { background: var(--success-bg); color: var(--success); }
+  .s-talk { background: var(--warning-bg); color: var(--warning); }
+  .s-search { background: var(--neutral-bg); color: var(--neutral); }
+
+  .amounts { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+  .a-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 3px; }
+  .a-value { font-size: 15px; font-weight: 500; color: var(--ink); }
+  .a-value.paid-val { color: var(--success); }
+  .a-value.remain-val { color: var(--danger); }
+  .a-value.zero { color: var(--ink-light); font-weight: 400; }
+
+  .cost-input, .paid-input { font-size: 15px; font-weight: 500; color: var(--ink); border: none; background: transparent; width: 100%; outline: none; font-family: 'Inter', sans-serif; padding: 0; }
+  .paid-input { color: var(--success); }
+  .cost-input:focus, .paid-input:focus { color: var(--rose-dark); border-bottom: 1px solid var(--rose); }
+
+  .item-bar { height: 3px; background: var(--blush); border-radius: 4px; overflow: hidden; margin-bottom: 10px; }
+  .item-bar-fill { height: 100%; background: var(--rose); border-radius: 4px; transition: width 0.4s; }
+
+  .pay-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+  .pay-inp { flex: 1; font-size: 13px; padding: 7px 10px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--ink); outline: none; font-family: 'Inter', sans-serif; transition: border-color 0.15s; }
+  .pay-inp:focus { border-color: var(--rose); }
+  .pay-inp::placeholder { color: var(--ink-light); }
+  .pay-btn { font-size: 12px; padding: 7px 14px; background: var(--rose); color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; font-weight: 500; transition: background 0.15s; white-space: nowrap; }
+  .pay-btn:hover { background: var(--rose-dark); }
+  .del-btn { font-size: 12px; padding: 7px 10px; background: transparent; color: var(--ink-light); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; white-space: nowrap; }
+  .del-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+  .hint-text { font-size: 10.5px; color: var(--ink-light); margin: -4px 0 8px 2px; }
+
+  .note-box { width: 100%; font-size: 12px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); resize: none; outline: none; line-height: 1.5; font-family: 'Inter', sans-serif; transition: border-color 0.15s; }
+  .note-box:focus { border-color: var(--rose); }
+  .note-box::placeholder { color: var(--ink-light); }
+
+  .add-wrap { text-align: center; margin-top: 16px; }
+  .add-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--rose); background: none; border: 1px dashed var(--rose); border-radius: 10px; padding: 9px 20px; cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.15s; }
+  .add-btn:hover { background: var(--blush); }
+
+  .share-wrap { max-width: 760px; margin: 28px auto 0; padding: 0 16px; }
+  .share-box { background: var(--card); border: 1px dashed var(--border-strong); border-radius: 14px; padding: 14px 16px; font-size: 12.5px; color: var(--ink-muted); }
+  .share-box b { color: var(--ink); }
+  .share-box code { background: var(--blush); padding: 2px 6px; border-radius: 5px; font-size: 12px; word-break: break-all; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--ink); color: white; font-size: 13px; padding: 10px 20px; border-radius: 20px; transition: transform 0.3s; pointer-events: none; z-index: 99; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(44,36,32,0.4); z-index: 50; align-items: flex-end; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--card); border-radius: 20px 20px 0 0; padding: 20px; width: 100%; max-width: 500px; }
+  .modal h3 { font-family: 'Cormorant Garamond', serif; font-size: 18px; margin-bottom: 16px; color: var(--ink); }
+  .modal p { line-height: 1.5; }
+  .modal-opt { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; margin-bottom: 8px; cursor: pointer; transition: background 0.15s; }
+  .modal-opt:hover { background: var(--surface); }
+  .modal-opt-text { font-size: 14px; color: var(--ink); }
+  .modal-cancel { width: 100%; padding: 12px; background: none; border: none; color: var(--ink-muted); font-size: 14px; cursor: pointer; margin-top: 4px; font-family: 'Inter', sans-serif; }
+  .form-label { font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 5px; display: block; }
+  .form-input { width: 100%; font-size: 14px; padding: 10px 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--ink); outline: none; font-family: 'Inter', sans-serif; margin-bottom: 14px; }
+  .form-input:focus { border-color: var(--rose); }
+  .form-save { width: 100%; padding: 12px; background: var(--rose); color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: 'Inter', sans-serif; margin-bottom: 6px; }
+  .form-save:hover { background: var(--rose-dark); }
+
+  @media (min-width: 860px) {
+    body { padding-bottom: 60px; }
+    .hero { height: 420px; }
+    .hero-names { font-size: 48px; }
+    .hero-date { font-size: 14px; }
+    .summary, .total-progress, .content, .share-wrap { max-width: 900px; }
+    .summary { grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 28px; }
+    .s-card { padding: 20px 16px; border-radius: 16px; }
+    .s-value { font-size: 26px; }
+    #list { grid-template-columns: 1fr 1fr; gap: 14px; }
+    .item { padding: 18px; }
+    .add-wrap { margin-top: 20px; }
+    .modal-overlay { align-items: center; }
+    .modal { border-radius: 18px; max-width: 420px; }
+  }
+  @media (max-width: 400px) {
+    .hero-names { font-size: 24px; }
+    .s-value { font-size: 17px; }
+    .item-name { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOADING ============ -->
+<div id="loading" class="landing-loading">Загрузка…</div>
+
+<!-- ============ LANDING ============ -->
+<div id="landing" style="display:none;">
+  <div class="landing-card">
+    <div class="emoji">💍</div>
+    <h1>Свадебная смета</h1>
+    <p>Придумайте короткое имя для своей сметы — например, ваши имена. По этому имени вы будете возвращаться к своей смете с любого устройства.</p>
+    <input class="landing-input" id="slugInput" placeholder="anna-i-ivan" autocomplete="off">
+    <div class="landing-hint">латиница, цифры и дефисы, без пробелов</div>
+    <button class="landing-btn" onclick="goToBudget()">Открыть / создать смету</button>
+    <div class="landing-error" id="landingError">Не удалось подключиться. Проверьте имя и попробуйте снова.</div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="sync-badge" id="syncBadge">Сохранено</div>
+
+  <div class="hero" id="hero">
+    <div class="hero-photo-wrap" id="heroPhotoWrap">
+      <img class="hero-photo" id="heroPhoto" style="display:none;" alt="Фото пары" />
+      <div class="hero-placeholder" id="heroPlaceholder" onclick="triggerUpload()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+        <span>Нажмите, чтобы загрузить фото</span>
+      </div>
+    </div>
+    <div class="hero-overlay">
+      <div class="hero-names" id="heroNames">Имя &amp; Имя</div>
+      <div class="hero-date" id="heroDate">Дата свадьбы</div>
+      <div class="hero-sub">Финансовая смета</div>
+    </div>
+    <div class="hero-controls" id="heroControls" style="display:none;">
+      <button class="hero-btn" onclick="triggerUpload()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10.5" r="1.5"/><path d="M21 15l-5-5L5 19"/></svg>
+        Заменить
+      </button>
+      <button class="hero-btn" id="cropToggleBtn" onclick="toggleCrop()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 002 2h14M18 22V8a2 2 0 00-2-2H2"/></svg>
+        Кадрировать
+      </button>
+    </div>
+    <button class="hero-btn edit-names-btn" onclick="openNamesModal()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      Изменить имена/дату
+    </button>
+    <div class="crop-hint" id="cropHint">Перетащите фото, чтобы выбрать нужную часть</div>
+    <div class="crop-bar" id="cropBar">
+      <span>Масштаб</span>
+      <input type="range" id="scaleRange" min="1" max="3" step="0.02" value="1" oninput="setScale(this.value)">
+      <button class="crop-done" onclick="toggleCrop()">Готово</button>
+    </div>
+    <input type="file" id="fileInput" accept="image/*" style="display:none;" onchange="onFileSelected(event)">
+  </div>
+
+  <div class="summary">
+    <div class="s-card"><div class="s-label">Бюджет</div><div class="s-value" id="tot-cost">—</div></div>
+    <div class="s-card"><div class="s-label">Внесено</div><div class="s-value green" id="tot-paid">—</div></div>
+    <div class="s-card"><div class="s-label">Осталось</div><div class="s-value red" id="tot-remain">—</div></div>
+  </div>
+
+  <div class="total-progress">
+    <div class="tp-bar"><div class="tp-fill" id="tp-fill" style="width:0%"></div></div>
+    <div class="tp-label" id="tp-label">0% оплачено</div>
+  </div>
+
+  <div class="content">
+    <div class="section-title">Подрядчики и расходы</div>
+    <div id="list"></div>
+    <div class="add-wrap">
+      <button class="add-btn" onclick="openAddModal()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Добавить позицию
+      </button>
+    </div>
+  </div>
+
+  <div class="share-wrap">
+    <div class="share-box">
+      Ваша персональная ссылка на эту смету: <br>
+      <code id="shareLink"></code>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <h3 id="modal-title">Статус</h3>
+    <div class="modal-opt" onclick="setStatus('booked')"><span class="status-pill s-booked">✅ забронировано</span><span class="modal-opt-text">Договор подписан / предоплата внесена</span></div>
+    <div class="modal-opt" onclick="setStatus('talk')"><span class="status-pill s-talk">💬 переговоры</span><span class="modal-opt-text">Списались, обсуждаем условия</span></div>
+    <div class="modal-opt" onclick="setStatus('search')"><span class="status-pill s-search">🔍 ищем</span><span class="modal-opt-text">Ещё только выбираем</span></div>
+    <button class="modal-cancel" onclick="closeModal()">Отмена</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="itemModal" onclick="closeItemModal(event)">
+  <div class="modal">
+    <h3 id="itemModalTitle">Добавить позицию</h3>
+    <label class="form-label">Название</label>
+    <input class="form-input" id="itemNameInput" placeholder="Например: Флорист">
+    <label class="form-label">Ссылка (Instagram / сайт, необязательно)</label>
+    <input class="form-input" id="itemLinkInput" placeholder="https://instagram.com/...">
+    <label class="form-label">Стоимость, ₽</label>
+    <input class="form-input" id="itemCostInput" type="number" min="0" placeholder="0">
+    <button class="form-save" onclick="saveItemModal()">Сохранить</button>
+    <button class="modal-cancel" onclick="closeItemModal()">Отмена</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="deleteModal" onclick="closeDeleteModal(event)">
+  <div class="modal">
+    <h3>Удалить позицию?</h3>
+    <p style="font-size:14px; color:var(--ink-muted); margin-bottom:16px;" id="deleteModalText"></p>
+    <button class="form-save" style="background:var(--danger);" onclick="confirmDelete()">Удалить</button>
+    <button class="modal-cancel" onclick="closeDeleteModal()">Отмена</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="namesModal" onclick="closeNamesModal(event)">
+  <div class="modal">
+    <h3>Имена и дата</h3>
+    <label class="form-label">Имена</label>
+    <input class="form-input" id="namesInput" placeholder="Анастасия & Данил">
+    <label class="form-label">Дата свадьбы</label>
+    <input class="form-input" id="dateInput" placeholder="24 июля 2027">
+    <button class="form-save" onclick="saveNamesModal()">Сохранить</button>
+    <button class="modal-cancel" onclick="closeNamesModal()">Отмена</button>
+  </div>
+</div>
+
+<script>
+/* ================= SUPABASE CONFIG ================= */
+const SUPABASE_URL = 'https://irhmxmaovgegztzmwgsh.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_iPWBdol6i3z2pLqL60z_5A_CGTxkE0F';
+const REST_URL = SUPABASE_URL + '/rest/v1/wedding_budgets';
+
+function sbHeaders(extra) {
+  return Object.assign({
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + SUPABASE_KEY,
+    'Content-Type': 'application/json'
+  }, extra || {});
+}
+
+async function fetchBudget(slug) {
+  const res = await fetch(`${REST_URL}?slug=eq.${encodeURIComponent(slug)}&select=data`, { headers: sbHeaders() });
+  if (!res.ok) throw new Error('fetch failed');
+  const rows = await res.json();
+  return rows.length ? rows[0].data : null;
+}
+
+async function upsertBudget(slug, data) {
+  const res = await fetch(`${REST_URL}?on_conflict=slug`, {
+    method: 'POST',
+    headers: sbHeaders({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
+    body: JSON.stringify([{ slug, data, updated_at: new Date().toISOString() }])
+  });
+  if (!res.ok) throw new Error('save failed');
+}
+
+/* ================= ROUTING ================= */
+function slugify(raw) {
+  return raw.trim().toLowerCase()
+    .replace(/[^a-z0-9а-яё\s-]/gi, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function getSlugFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('s');
+}
+
+function goToBudget() {
+  const raw = document.getElementById('slugInput').value;
+  const slug = slugify(raw);
+  const err = document.getElementById('landingError');
+  if (!slug) { err.textContent = 'Введите имя для сметы.'; err.style.display = 'block'; return; }
+  window.location.search = '?s=' + encodeURIComponent(slug);
+}
+
+document.getElementById('slugInput')?.addEventListener('keydown', e => { if (e.key === 'Enter') goToBudget(); });
+
+/* ================= STATE ================= */
+let currentSlug = null;
+let items = [];
+let photo = null;
+let coupleNames = 'Имя & Имя';
+let weddingDate = 'Дата свадьбы';
+let nextId = 1;
+let modalItemId = null;
+let editItemId = null;
+let deleteTargetId = null;
+let cropMode = false;
+let dragging = false;
+let dragStart = { x:0, y:0, offX:0, offY:0 };
+let baseScale = 1;
+let naturalW = 0, naturalH = 0;
+let saveTimer = null;
+
+async function init() {
+  const slug = getSlugFromUrl();
+  if (!slug) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('landing').style.display = 'flex';
+    return;
+  }
+  currentSlug = slug;
+  try {
+    const data = await fetchBudget(slug);
+    if (data) {
+      items = data.items || [];
+      photo = data.photo || null;
+      coupleNames = data.coupleNames || coupleNames;
+      weddingDate = data.weddingDate || weddingDate;
+      nextId = items.length ? Math.max(...items.map(i => i.id), 0) + 1 : 1;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('shareLink').textContent = window.location.origin + window.location.pathname + '?s=' + slug;
+  render();
+  renderPhoto();
+  renderNames();
+}
+
+function showSyncBadge(msg) {
+  const b = document.getElementById('syncBadge');
+  b.textContent = msg || 'Сохранено';
+  b.classList.add('show');
+  setTimeout(() => b.classList.remove('show'), 1400);
+}
+
+async function saveData() {
+  if (!currentSlug) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await upsertBudget(currentSlug, { items, photo, coupleNames, weddingDate });
+      showSyncBadge('Сохранено');
+    } catch (e) {
+      console.error(e);
+      showSyncBadge('Ошибка сохранения');
+    }
+  }, 350);
+}
+
+function fmt(n) { return (n || 0).toLocaleString('ru-RU') + ' ₽'; }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ---------- NAMES / DATE ---------- */
+function renderNames() {
+  document.getElementById('heroNames').innerHTML = coupleNames.replace(/&/g, '&amp;');
+  document.getElementById('heroDate').textContent = weddingDate;
+}
+function openNamesModal() {
+  document.getElementById('namesInput').value = coupleNames;
+  document.getElementById('dateInput').value = weddingDate;
+  document.getElementById('namesModal').classList.add('open');
+}
+function closeNamesModal(e) {
+  if (!e || e.target === document.getElementById('namesModal')) document.getElementById('namesModal').classList.remove('open');
+}
+function saveNamesModal() {
+  const n = document.getElementById('namesInput').value.trim();
+  const d = document.getElementById('dateInput').value.trim();
+  if (n) coupleNames = n;
+  if (d) weddingDate = d;
+  renderNames();
+  saveData();
+  document.getElementById('namesModal').classList.remove('open');
+  showToast('Обновлено');
+}
+
+/* ---------- PHOTO / CROP ---------- */
+function triggerUpload() { document.getElementById('fileInput').click(); }
+
+function onFileSelected(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    photo = { src: ev.target.result, offsetX: 0, offsetY: 0, userScale: 1 };
+    saveData();
+    renderPhoto();
+    showToast('Фото загружено');
+  };
+  reader.readAsDataURL(file);
+}
+
+function renderPhoto() {
+  const img = document.getElementById('heroPhoto');
+  const placeholder = document.getElementById('heroPlaceholder');
+  const controls = document.getElementById('heroControls');
+  if (photo && photo.src) {
+    img.onload = () => {
+      naturalW = img.naturalWidth;
+      naturalH = img.naturalHeight;
+      computeBaseScale();
+      clampOffsets();
+      applyPhotoTransform();
+    };
+    img.src = photo.src;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+    controls.style.display = 'flex';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+    controls.style.display = 'none';
+  }
+}
+
+function computeBaseScale() {
+  const wrap = document.getElementById('heroPhotoWrap');
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  if (!naturalW || !naturalH || !cw || !ch) { baseScale = 1; return; }
+  baseScale = Math.max(cw / naturalW, ch / naturalH);
+}
+
+function clampOffsets() {
+  if (!photo) return;
+  const wrap = document.getElementById('heroPhotoWrap');
+  const cw = wrap.clientWidth, ch = wrap.clientHeight;
+  const eff = baseScale * (photo.userScale || 1);
+  const scaledW = naturalW * eff, scaledH = naturalH * eff;
+  const maxX = Math.max(0, (scaledW - cw) / 2);
+  const maxY = Math.max(0, (scaledH - ch) / 2);
+  photo.offsetX = Math.min(maxX, Math.max(-maxX, photo.offsetX || 0));
+  photo.offsetY = Math.min(maxY, Math.max(-maxY, photo.offsetY || 0));
+}
+
+function applyPhotoTransform() {
+  if (!photo) return;
+  const img = document.getElementById('heroPhoto');
+  const eff = baseScale * (photo.userScale || 1);
+  img.style.width = naturalW + 'px';
+  img.style.height = naturalH + 'px';
+  img.style.transform = `translate(-50%, -50%) translate(${photo.offsetX}px, ${photo.offsetY}px) scale(${eff})`;
+}
+
+function toggleCrop() {
+  if (!photo) return;
+  cropMode = !cropMode;
+  document.getElementById('cropBar').classList.toggle('open', cropMode);
+  document.getElementById('cropHint').classList.toggle('open', cropMode);
+  document.getElementById('cropToggleBtn').classList.toggle('active', cropMode);
+  document.getElementById('heroPhotoWrap').classList.toggle('cropping', cropMode);
+  document.getElementById('scaleRange').value = photo.userScale || 1;
+  if (!cropMode) saveData();
+}
+
+function setScale(val) {
+  if (!photo) return;
+  photo.userScale = parseFloat(val);
+  clampOffsets();
+  applyPhotoTransform();
+}
+
+function startDrag(x, y) { if (!cropMode || !photo) return; dragging = true; document.getElementById('heroPhotoWrap').classList.add('dragging'); dragStart = { x, y, offX: photo.offsetX || 0, offY: photo.offsetY || 0 }; }
+function moveDrag(x, y) { if (!dragging || !photo) return; photo.offsetX = dragStart.offX + (x - dragStart.x); photo.offsetY = dragStart.offY + (y - dragStart.y); clampOffsets(); applyPhotoTransform(); }
+function endDrag() { dragging = false; document.getElementById('heroPhotoWrap').classList.remove('dragging'); }
+
+(function initDragListeners() {
+  const wrap = document.getElementById('heroPhotoWrap');
+  wrap.addEventListener('mousedown', e => { if (cropMode) { e.preventDefault(); startDrag(e.clientX, e.clientY); } });
+  window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+  window.addEventListener('mouseup', endDrag);
+  wrap.addEventListener('touchstart', e => { if (cropMode) { const t = e.touches[0]; startDrag(t.clientX, t.clientY); } }, { passive: true });
+  wrap.addEventListener('touchmove', e => { if (cropMode) { const t = e.touches[0]; moveDrag(t.clientX, t.clientY); } }, { passive: true });
+  wrap.addEventListener('touchend', endDrag);
+  window.addEventListener('resize', () => { if (photo && naturalW) { computeBaseScale(); clampOffsets(); applyPhotoTransform(); } });
+})();
+
+/* ---------- STATUS MODAL ---------- */
+function openModal(id) {
+  modalItemId = id;
+  const item = items.find(i => i.id === id);
+  document.getElementById('modal-title').textContent = 'Статус: ' + item.name;
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal(e) { if (!e || e.target === document.getElementById('modal')) { document.getElementById('modal').classList.remove('open'); modalItemId = null; } }
+function setStatus(s) {
+  const item = items.find(i => i.id === modalItemId);
+  if (item) { item.status = s; saveData(); render(); }
+  document.getElementById('modal').classList.remove('open');
+  modalItemId = null;
+  showToast('Статус обновлён');
+}
+
+/* ---------- ADD / EDIT ITEM MODAL ---------- */
+function openAddModal() {
+  editItemId = null;
+  document.getElementById('itemModalTitle').textContent = 'Добавить позицию';
+  document.getElementById('itemNameInput').value = '';
+  document.getElementById('itemLinkInput').value = '';
+  document.getElementById('itemCostInput').value = '';
+  document.getElementById('itemModal').classList.add('open');
+  setTimeout(() => document.getElementById('itemNameInput').focus(), 50);
+}
+function openEditModal(id) {
+  editItemId = id;
+  const item = items.find(i => i.id === id);
+  document.getElementById('itemModalTitle').textContent = 'Изменить позицию';
+  document.getElementById('itemNameInput').value = item.name;
+  document.getElementById('itemLinkInput').value = item.link || '';
+  document.getElementById('itemCostInput').value = item.cost || '';
+  document.getElementById('itemModal').classList.add('open');
+}
+function closeItemModal(e) { if (!e || e.target === document.getElementById('itemModal')) { document.getElementById('itemModal').classList.remove('open'); editItemId = null; } }
+function saveItemModal() {
+  const name = document.getElementById('itemNameInput').value.trim();
+  const link = document.getElementById('itemLinkInput').value.trim();
+  const cost = parseInt(document.getElementById('itemCostInput').value) || 0;
+  if (!name) { document.getElementById('itemNameInput').focus(); return; }
+  const linkLabel = link.includes('instagram.com') ? '@' + link.split('/').filter(Boolean).pop() : link;
+  if (editItemId) {
+    const item = items.find(i => i.id === editItemId);
+    if (item) { item.name = name; item.link = link; item.linkLabel = linkLabel; item.cost = cost; }
+    showToast('Позиция обновлена');
+  } else {
+    items.push({ id: nextId++, name, cost, paid: 0, status: 'search', note: '', link, linkLabel });
+    showToast('Позиция добавлена');
+  }
+  saveData();
+  document.getElementById('itemModal').classList.remove('open');
+  editItemId = null;
+  render();
+}
+
+/* ---------- DELETE ITEM MODAL ---------- */
+function deleteItem(id) {
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  deleteTargetId = id;
+  document.getElementById('deleteModalText').textContent = `Позиция «${item.name}» будет удалена без возможности восстановления.`;
+  document.getElementById('deleteModal').classList.add('open');
+}
+function closeDeleteModal(e) { if (!e || e.target === document.getElementById('deleteModal')) { document.getElementById('deleteModal').classList.remove('open'); deleteTargetId = null; } }
+function confirmDelete() {
+  if (deleteTargetId != null) {
+    items = items.filter(i => i.id !== deleteTargetId);
+    saveData(); render();
+    showToast('Позиция удалена');
+  }
+  document.getElementById('deleteModal').classList.remove('open');
+  deleteTargetId = null;
+}
+
+/* ---------- ITEM FIELD ACTIONS ---------- */
+function updateCost(id, val) {
+  const item = items.find(i => i.id === id);
+  if (item) { item.cost = parseInt(val.replace(/\D/g,'')) || 0; saveData(); render(); }
+}
+function updatePaid(id, val) {
+  const item = items.find(i => i.id === id);
+  if (item) { item.paid = parseInt(String(val).replace(/\D/g,'')) || 0; saveData(); render(); showToast('Сумма внесённого обновлена'); }
+}
+function addPayment(id) {
+  const inp = document.getElementById('pay-' + id);
+  const amt = parseInt(inp.value) || 0;
+  if (amt <= 0) { inp.focus(); return; }
+  const item = items.find(i => i.id === id);
+  if (item) { item.paid = (item.paid || 0) + amt; saveData(); inp.value = ''; render(); showToast('Внесено ' + fmt(amt)); }
+}
+function updateNote(id, val) {
+  const item = items.find(i => i.id === id);
+  if (item) { item.note = val; saveData(); }
+}
+
+function statusLabel(s) { if (s === 'booked') return '✅ забронировано'; if (s === 'talk') return '💬 переговоры'; return '🔍 ищем'; }
+function statusClass(s) { if (s === 'booked') return 's-booked'; if (s === 'talk') return 's-talk'; return 's-search'; }
+
+function renderSummary() {
+  let tc = 0, tp = 0;
+  items.forEach(i => { tc += i.cost || 0; tp += i.paid || 0; });
+  const tr = tc - tp;
+  const pct = tc ? Math.round((tp / tc) * 100) : 0;
+  document.getElementById('tot-cost').textContent = fmt(tc);
+  document.getElementById('tot-paid').textContent = fmt(tp);
+  document.getElementById('tot-remain').textContent = fmt(tr);
+  document.getElementById('tp-fill').style.width = pct + '%';
+  document.getElementById('tp-label').textContent = pct + '% оплачено';
+}
+
+function render() {
+  renderSummary();
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  items.forEach(item => {
+    const remain = (item.cost || 0) - (item.paid || 0);
+    const pct = item.cost ? Math.min(100, Math.round((item.paid / item.cost) * 100)) : 0;
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `
+      <div class="item-top">
+        <div class="item-left">
+          <div class="item-name-row">
+            <div class="item-name">${item.name}</div>
+            <button class="edit-icon" onclick="openEditModal(${item.id})" title="Изменить">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+          </div>
+          ${item.link ? `<a class="item-link" href="${item.link}" target="_blank">
+            <svg viewBox="0 0 12 12" fill="none"><path d="M7 1h4v4M11 1L5.5 6.5M4 2H2a1 1 0 00-1 1v7a1 1 0 001 1h7a1 1 0 001-1V8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            ${item.linkLabel || item.link}
+          </a>` : ''}
+        </div>
+        <button class="status-pill ${statusClass(item.status)}" onclick="openModal(${item.id})">${statusLabel(item.status)}</button>
+      </div>
+      <div class="amounts">
+        <div class="a-cell">
+          <div class="a-label">Стоимость</div>
+          <input class="cost-input" type="text" value="${(item.cost || 0).toLocaleString('ru-RU')}"
+            onblur="updateCost(${item.id}, this.value)" onkeydown="if(event.key==='Enter')this.blur()" onfocus="this.select()" />
+        </div>
+        <div class="a-cell">
+          <div class="a-label">Внесено</div>
+          <input class="paid-input" type="text" value="${(item.paid || 0).toLocaleString('ru-RU')}"
+            onblur="updatePaid(${item.id}, this.value)" onkeydown="if(event.key==='Enter')this.blur()" onfocus="this.select()" />
+        </div>
+        <div class="a-cell">
+          <div class="a-label">Остаток</div>
+          <div class="a-value ${remain > 0 ? 'remain-val' : (item.cost > 0 ? 'paid-val' : 'zero')}">${item.cost > 0 ? (remain > 0 ? fmt(remain) : '✓') : '—'}</div>
+        </div>
+      </div>
+      ${item.cost > 0 ? `<div class="item-bar"><div class="item-bar-fill" style="width:${pct}%"></div></div>` : ''}
+      <div class="hint-text">Внесённую сумму можно изменить или обнулить прямо в поле «Внесено»</div>
+      <div class="pay-row">
+        <input class="pay-inp" type="number" id="pay-${item.id}" placeholder="добавить платёж…" min="0" onkeydown="if(event.key==='Enter')addPayment(${item.id})" />
+        <button class="pay-btn" onclick="addPayment(${item.id})">Внести</button>
+        <button class="del-btn" onclick="deleteItem(${item.id})" title="Удалить позицию">Удалить</button>
+      </div>
+      <textarea class="note-box" rows="2" placeholder="Заметки: когда платить, договорённости, контакты…" onchange="updateNote(${item.id}, this.value)">${item.note || ''}</textarea>
+    `;
+    list.appendChild(div);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
