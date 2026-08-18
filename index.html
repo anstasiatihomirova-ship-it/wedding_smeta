@@ -189,6 +189,14 @@
   .s-value { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--ink); line-height: 1.1; }
   .s-value.green { color: var(--success); }
   .s-value.red { color: var(--danger); }
+  .s-value-input {
+    font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--ink);
+    line-height: 1.1; border: none; background: transparent; text-align: center; width: 100%; outline: none;
+  }
+  .s-value-input:focus { color: var(--rose-dark); border-bottom: 1px solid var(--rose); }
+  .s-reset-link { font-size: 9.5px; color: var(--rose); cursor: pointer; margin-top: 5px; display: none; }
+  .s-reset-link.show { display: block; }
+  .s-reset-link:hover { text-decoration: underline; }
 
   .total-progress { max-width: 760px; margin: 16px auto 0; padding: 0 16px; }
   .tp-bar { height: 6px; background: var(--blush-deep); border-radius: 10px; overflow: hidden; margin-bottom: 6px; }
@@ -283,7 +291,7 @@
     .summary, .total-progress, .content, .share-wrap { max-width: 900px; }
     .summary { grid-template-columns: repeat(3, 1fr); gap: 16px; padding-top: 28px; }
     .s-card { padding: 20px 16px; border-radius: 16px; }
-    .s-value { font-size: 26px; }
+    .s-value, .s-value-input { font-size: 26px; }
     #list { grid-template-columns: 1fr 1fr; gap: 14px; }
     .item { padding: 18px; }
     .add-wrap { margin-top: 20px; }
@@ -292,7 +300,7 @@
   }
   @media (max-width: 400px) {
     .hero-names { font-size: 24px; }
-    .s-value { font-size: 17px; }
+    .s-value, .s-value-input { font-size: 17px; }
     .item-name { font-size: 16px; }
   }
 </style>
@@ -356,7 +364,12 @@
   </div>
 
   <div class="summary">
-    <div class="s-card"><div class="s-label">Бюджет</div><div class="s-value" id="tot-cost">—</div></div>
+    <div class="s-card">
+      <div class="s-label">Бюджет</div>
+      <input class="s-value-input" id="tot-cost" type="text" value="0"
+        onfocus="this.select()" onkeydown="if(event.key==='Enter')this.blur()" onblur="updateBudget(this.value)" />
+      <div class="s-reset-link" id="budgetResetLink" onclick="resetBudgetToAuto()"></div>
+    </div>
     <div class="s-card"><div class="s-label">Внесено</div><div class="s-value green" id="tot-paid">—</div></div>
     <div class="s-card"><div class="s-label">Осталось</div><div class="s-value red" id="tot-remain">—</div></div>
   </div>
@@ -492,6 +505,7 @@ let items = [];
 let photo = null;
 let coupleNames = 'Имя & Имя';
 let weddingDate = 'Дата свадьбы';
+let budgetOverride = null; // manually entered total budget, or null = auto (sum of item costs)
 let nextId = 1;
 let modalItemId = null;
 let editItemId = null;
@@ -518,6 +532,7 @@ async function init() {
       photo = data.photo || null;
       coupleNames = data.coupleNames || coupleNames;
       weddingDate = data.weddingDate || weddingDate;
+      budgetOverride = (typeof data.budgetOverride === 'number') ? data.budgetOverride : null;
       nextId = items.length ? Math.max(...items.map(i => i.id), 0) + 1 : 1;
     }
   } catch (e) {
@@ -543,7 +558,7 @@ async function saveData() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     try {
-      await upsertBudget(currentSlug, { items, photo, coupleNames, weddingDate });
+      await upsertBudget(currentSlug, { items, photo, coupleNames, weddingDate, budgetOverride });
       showSyncBadge('Сохранено');
     } catch (e) {
       console.error(e);
@@ -553,6 +568,7 @@ async function saveData() {
 }
 
 function fmt(n) { return (n || 0).toLocaleString('ru-RU') + ' ₽'; }
+function fmtPlain(n) { return (n || 0).toLocaleString('ru-RU'); }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -583,6 +599,21 @@ function saveNamesModal() {
   saveData();
   document.getElementById('namesModal').classList.remove('open');
   showToast('Обновлено');
+}
+
+/* ---------- BUDGET (manual override) ---------- */
+function updateBudget(val) {
+  const num = parseInt(String(val).replace(/\D/g, '')) || 0;
+  budgetOverride = num;
+  saveData();
+  render();
+  showToast('Бюджет обновлён');
+}
+function resetBudgetToAuto() {
+  budgetOverride = null;
+  saveData();
+  render();
+  showToast('Бюджет считается по позициям');
 }
 
 /* ---------- PHOTO / CROP ---------- */
@@ -785,15 +816,30 @@ function statusLabel(s) { if (s === 'booked') return '✅ забронирова
 function statusClass(s) { if (s === 'booked') return 's-booked'; if (s === 'talk') return 's-talk'; return 's-search'; }
 
 function renderSummary() {
-  let tc = 0, tp = 0;
-  items.forEach(i => { tc += i.cost || 0; tp += i.paid || 0; });
-  const tr = tc - tp;
-  const pct = tc ? Math.round((tp / tc) * 100) : 0;
-  document.getElementById('tot-cost').textContent = fmt(tc);
+  let autoCost = 0, tp = 0;
+  items.forEach(i => { autoCost += i.cost || 0; tp += i.paid || 0; });
+
+  const isManual = budgetOverride != null;
+  const displayBudget = isManual ? budgetOverride : autoCost;
+  const tr = displayBudget - tp;
+  const pct = displayBudget ? Math.round((tp / displayBudget) * 100) : 0;
+
+  const budgetInput = document.getElementById('tot-cost');
+  if (document.activeElement !== budgetInput) {
+    budgetInput.value = fmtPlain(displayBudget);
+  }
   document.getElementById('tot-paid').textContent = fmt(tp);
   document.getElementById('tot-remain').textContent = fmt(tr);
-  document.getElementById('tp-fill').style.width = pct + '%';
+  document.getElementById('tp-fill').style.width = Math.max(0, Math.min(100, pct)) + '%';
   document.getElementById('tp-label').textContent = pct + '% оплачено';
+
+  const resetLink = document.getElementById('budgetResetLink');
+  if (isManual) {
+    resetLink.textContent = `по позициям: ${fmtPlain(autoCost)} ₽`;
+    resetLink.classList.add('show');
+  } else {
+    resetLink.classList.remove('show');
+  }
 }
 
 function render() {
